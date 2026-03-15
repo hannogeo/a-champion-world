@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Champion World</title>
+    <meta name="description" content="Explore the country distribution and other information for the A Champion World GeoGuessr map.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="">
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <a href="index.html" class="logo">A <span>CHAMPION</span> WORLD</a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="#distribution">Distribution</a></li>
+                <li><a href="info.html">Map Info</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1><i>A</i> <span>CHAMPION</span> <i>WORLD</i></h1>
+            <p>A mainly rural GeoGuessr map designed for players who enjoy regionguessing. The distribution is meant to be balanced, although mostly leaning towards bigger countries.</p>
+            <div class="hero-btns">
+                <a href="https://www.geoguessr.com/maps/696f4c53d53961f07bf239bd" class="btn btn-primary" target="_blank" rel="noopener noreferrer" style="font-weight: 600;">PLAY NOW</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="distribution" class="stats-header">
+            <div class="stats-title">
+                <h2>Country Distribution</h2>
+                <p>Here you can find info for all regions included in the latest update. (Total locations: <span id="totalLocationsDisplay"></span>)</p>
+            </div>
+            <div class="controls-container">
+                <div class="search-container">
+                    <svg class="search-icon" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <input type="text" id="countrySearch" placeholder="Search by name or code...">
+                </div>
+                <select id="sortSelect" class="sort-select">
+                    <option value="amount-desc">Amount (High to Low)</option>
+                    <option value="amount-asc">Amount (Low to High)</option>
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="country-grid" id="countryGrid">
+            <!-- Dynamically populated via script.js -->
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
