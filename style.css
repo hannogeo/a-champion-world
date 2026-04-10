@@ -21,7 +21,7 @@ html {
     /* System */
     --radius-xl: 14px;
     --radius-lg: 10px;
-    --radius-md: 6px;
+    --radius-md: 8px;
     --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
