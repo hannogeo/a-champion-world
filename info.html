@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Map Info | A Champion World</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="hannog.ico">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="assets/hannog.ico">
 </head>
-<body>
+<body data-page="info">
     <nav>
         <div class="container nav-content">
             <a href="index.html" class="logo">A <span>CHAMPION</span> WORLD</a>
@@ -21,32 +21,25 @@
     </nav>
 
     <main class="container" style="padding-top: 120px; padding-bottom: 100px;">
-        <h1 style="font-size: 3.5rem; font-weight: 700; margin-bottom: 2rem; letter-spacing: -0.05em;">Map <span>Information</span></h1>
+        <h1 data-content-id="mainTitle" style="font-size: 3.5rem; font-weight: 700; margin-bottom: 2rem; letter-spacing: -0.05em;"></h1>
         
         <div style="background: var(--bg-card); padding: 3rem; border-radius: var(--radius-xl); border: 1px solid var(--border-dim); max-width: 800px; margin: 0 auto; line-height: 1.8;">
-            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.0rem;">
-                A Champion World is a project built by HannoGeo, with the main goal being just a good distribution. All locations are generated with Vali.
-            </p>
+            <p data-content-id="desc1" style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.0rem; min-height: 1.5rem;"></p>
             
-            <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.5rem;">The Distribution</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-                As mentioned, the main reason that I even created this map is just because I hate the distributions of most other maps. For example, I think it's totally logical that the country with the most locs on a map is Russia. (people often say that's "ragebait" 🥀) Also, on most maps, countries with sparse coverage (Namibia, Kazakhstan, Bolivia, etc.) are massively underrepresented, which I am not a fan of. There are no badcam locs in countries where there's no need for them. I have worked on making the map as nice as possible. enjoy :)
-            </p>
+            <h3 data-content-id="heading1" style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.5rem; min-height: 1.5rem;"></h3>
+            <p data-content-id="desc2" style="color: var(--text-secondary); margin-bottom: 2rem; min-height: 1.5rem;"></p>
 
-            <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.5rem;">New Additions</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-                All India locs are now Gen 4 Smallcam!
-            </p>
+            <h3 data-content-id="heading2" style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.5rem; min-height: 1.5rem;"></h3>
+            <p data-content-id="desc3" style="color: var(--text-secondary); margin-bottom: 2rem; min-height: 1.5rem;"></p>
 
-            <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.5rem;">Updates</h3>
-            <p style="color: var(--text-secondary);">
-                The map is updated regularly to include new areas as they are released in GeoGuessr. I also regularly review the map to fix any broken locations. If you do see any unofficial or broken coverage, feel free to let me know and I'll fix it.
-            </p>
+            <h3 data-content-id="heading3" style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.5rem; min-height: 1.5rem;"></h3>
+            <p data-content-id="desc4" style="color: var(--text-secondary); min-height: 1.5rem;"></p>
         </div>
         
         <div style="text-align: center; margin-top: 4rem;">
             <a href="index.html" class="btn btn-primary">Back to Home</a>
         </div>
     </main>
+    <script type="module" src="js/content-manager.js"></script>
 </body>
 </html>

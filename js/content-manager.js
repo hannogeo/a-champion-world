@@ -1,0 +1,143 @@
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+const pageName = document.body.getAttribute("data-page");
+let isAdmin = false;
+
+// Initialize
+document.addEventListener("DOMContentLoaded", () => {
+    if (pageName) {
+        loadContent(pageName);
+    }
+});
+
+// Check Auth State for Inline Editing
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        isAdmin = true;
+        enableAdminMode();
+    } else {
+        isAdmin = false;
+    }
+});
+
+// Fetch content from Firestore and populate the page
+export async function loadContent(pageName) {
+    try {
+        const docRef = doc(db, "pages", pageName);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const elements = document.querySelectorAll("[data-content-id]");
+            elements.forEach(el => {
+                const key = el.getAttribute("data-content-id");
+                if (data[key] !== undefined) {
+                    el.innerHTML = data[key];
+                }
+            });
+        }
+    } catch (error) {
+        console.error("Error loading content:", error);
+    }
+}
+
+function enableAdminMode() {
+    // Add visual cues to editable elements
+    const style = document.createElement('style');
+    style.innerHTML = `
+        [data-content-id] {
+            outline: 2px dashed transparent;
+            transition: outline 0.2s;
+            position: relative;
+        }
+        [data-content-id]:hover {
+            outline: 2px dashed var(--accent-primary);
+            cursor: text;
+        }
+        .admin-toolbar {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--bg-card);
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--accent-primary);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            gap: 1rem;
+            z-index: 9999;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Make elements editable
+    const elements = document.querySelectorAll("[data-content-id]");
+    elements.forEach(el => {
+        el.setAttribute("contenteditable", "true");
+    });
+
+    // Create floating toolbar
+    const toolbar = document.createElement('div');
+    toolbar.className = 'admin-toolbar';
+    
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn btn-primary';
+    saveBtn.innerText = 'Save Page Changes';
+    saveBtn.onclick = savePageContent;
+
+    const logoutBtn = document.createElement('button');
+    logoutBtn.className = 'btn';
+    logoutBtn.style.background = '#ef4444';
+    logoutBtn.style.color = 'white';
+    logoutBtn.innerText = 'Log Out';
+    logoutBtn.onclick = async () => {
+        await signOut(auth);
+        window.location.reload();
+    };
+
+    toolbar.appendChild(saveBtn);
+    toolbar.appendChild(logoutBtn);
+    document.body.appendChild(toolbar);
+}
+
+async function savePageContent() {
+    if (!pageName) return;
+    
+    const saveBtn = document.querySelector('.admin-toolbar .btn-primary');
+    saveBtn.innerText = 'Saving...';
+    
+    const data = {};
+    const elements = document.querySelectorAll("[data-content-id]");
+    elements.forEach(el => {
+        const key = el.getAttribute("data-content-id");
+        data[key] = el.innerHTML;
+    });
+
+    try {
+        await setDoc(doc(db, "pages", pageName), data, { merge: true });
+
+        // Save Country Overrides if any exist
+        const countryElements = document.querySelectorAll("[data-country-code]");
+        if (countryElements.length > 0) {
+            const overrides = {};
+            countryElements.forEach(el => {
+                const num = parseInt(el.innerText.replace(/,/g, ''), 10);
+                if (!isNaN(num)) {
+                    overrides[el.getAttribute("data-country-code")] = num;
+                }
+            });
+            if (Object.keys(overrides).length > 0) {
+                await setDoc(doc(db, "data", "countryOverrides"), overrides, { merge: true });
+            }
+        }
+
+        saveBtn.innerText = 'Saved!';
+        setTimeout(() => saveBtn.innerText = 'Save Page Changes', 2000);
+    } catch (error) {
+        console.error("Error saving content:", error);
+        saveBtn.innerText = 'Error saving';
+        alert("Make sure you are logged in and have write permissions in Firestore.");
+    }
+}

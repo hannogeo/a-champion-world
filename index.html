@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A Champion World</title>
     <meta name="description" content="Explore the country distribution and other information for the A Champion World GeoGuessr map.">
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="hannog.ico">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="assets/hannog.ico">
 </head>
-<body>
+<body data-page="index">
     <nav>
         <div class="container nav-content">
             <a href="index.html" class="logo">A <span>CHAMPION</span> WORLD</a>
@@ -23,8 +23,8 @@
 
     <header class="hero">
         <div class="container">
-            <h1><i>A</i> <span>CHAMPION</span> <i>WORLD</i></h1>
-            <p>A GeoGuessr map designed for players who enjoy regionguessing. The distribution is meant to be balanced, although mostly leaning towards bigger countries.</p>
+            <h1 data-content-id="heroTitle" style="min-height: 4rem;"></h1>
+            <p data-content-id="heroDesc" style="min-height: 1.5rem;"></p>
             <div class="hero-btns">
                 <a href="https://www.geoguessr.com/maps/696f4c53d53961f07bf239bd" class="btn btn-primary" target="_blank" rel="noopener noreferrer" style="font-weight: 600;">PLAY NOW</a>
             </div>
@@ -34,8 +34,12 @@
     <main class="container">
         <section id="distribution" class="stats-header">
             <div class="stats-title">
-                <h2>Country Distribution</h2>
-                <p>Here you can find info for all regions included in the latest update. (Total locations: <span id="totalLocationsDisplay"></span>)</p>
+                <h2 data-content-id="distTitle" style="min-height: 2.5rem;"></h2>
+                <p data-content-id="distSub" style="min-height: 1.5rem;"></p>
+                <div class="total-locations-badge">
+                    <span class="badge-label">Total Locations:</span>
+                    <span class="badge-value" id="totalLocationsDisplay"></span>
+                </div>
             </div>
             <div class="controls-container">
                 <div class="search-container">
@@ -58,6 +62,7 @@
         </section>
     </main>
 
-    <script src="script.js"></script>
+    <script type="module" src="js/script.js"></script>
+    <script type="module" src="js/content-manager.js"></script>
 </body>
 </html>

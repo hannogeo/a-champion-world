@@ -1,3 +1,7 @@
+import { db, auth } from "./firebase-config.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
 const countryNames = {
     "AD": "Andorra", "AE": "United Arab Emirates", "AL": "Albania", "AR": "Argentina", "AS": "American Samoa", "AT": "Austria", "AU": "Australia", "AX": "Åland", "BA": "Bosnia and Herzegovina", "BD": "Bangladesh", "BE": "Belgium", "BG": "Bulgaria", "BO": "Bolivia", "BR": "Brazil", "BT": "Bhutan", "BW": "Botswana", "CA": "Canada", "CC": "Cocos (Keeling) Islands", "CH": "Switzerland", "CL": "Chile", "CO": "Colombia", "CR": "Costa Rica", "CW": "Curaçao", "CX": "Christmas Island", "CY": "Cyprus", "CZ": "Czechia", "DE": "Germany", "DK": "Denmark", "DO": "Dominican Republic", "EC": "Ecuador", "EE": "Estonia", "ES": "Spain", "FI": "Finland", "FO": "Faroe Islands", "FR": "France", "GB": "United Kingdom", "GH": "Ghana", "GL": "Greenland", "GR": "Greece", "GT": "Guatemala", "GU": "Guam", "HK": "Hong Kong", "HR": "Croatia", "HU": "Hungary", "ID": "Indonesia", "IE": "Ireland", "IL": "Israel", "IM": "Isle of Man", "IN": "India", "IS": "Iceland", "IT": "Italy", "JE": "Jersey", "JO": "Jordan", "JP": "Japan", "KE": "Kenya", "KG": "Kyrgyzstan", "KH": "Cambodia", "KR": "South Korea", "KZ": "Kazakhstan", "LA": "Laos", "LB": "Lebanon", "LK": "Sri Lanka", "LS": "Lesotho", "LT": "Lithuania", "LU": "Luxembourg", "LV": "Latvia", "ME": "Montenegro", "MK": "North Macedonia", "MN": "Mongolia", "MP": "Northern Mariana Islands", "MX": "Mexico", "MY": "Malaysia", "NA": "Namibia", "NG": "Nigeria", "NL": "Netherlands", "NO": "Norway", "NP": "Nepal", "NZ": "New Zealand", "OM": "Oman", "PA": "Panama", "PE": "Peru", "PH": "Philippines", "PL": "Poland", "PR": "Puerto Rico", "PS": "Palestine", "PT": "Portugal", "PY": "Paraguay", "QA": "Qatar", "RE": "Réunion", "RO": "Romania", "RS": "Serbia", "RU": "Russia", "RW": "Rwanda", "SE": "Sweden", "SG": "Singapore", "SI": "Slovenia", "SK": "Slovakia", "SN": "Senegal", "ST": "São Tomé and Príncipe", "SZ": "Eswatini", "TH": "Thailand", "TN": "Tunisia", "TR": "Turkey", "TW": "Taiwan", "UA": "Ukraine", "UG": "Uganda", "US": "United States", "UY": "Uruguay", "VI": "US Virgin Islands", "VN": "Vietnam", "ZA": "South Africa"
 };
@@ -114,24 +118,56 @@ VI	1
 VN	1239
 ZA	2062`;
 
-const countries = rawData.split('\n').map(line => {
+const rawCountries = rawData.split('\n').map(line => {
     const [code, count] = line.trim().split(/\s+/);
     return {
         code: code.toLowerCase(),
         name: countryNames[code] || code,
         count: parseInt(count, 10)
     };
-}).sort((a, b) => b.count - a.count);
+});
 
-const totalLocations = countries.reduce((acc, curr) => acc + curr.count, 0);
+let countries = [...rawCountries].sort((a, b) => b.count - a.count);
+let totalLocations = 0;
+let isAdmin = false;
 
 const countryGrid = document.getElementById('countryGrid');
 const countrySearch = document.getElementById('countrySearch');
 const totalLocationsDisplay = document.getElementById('totalLocationsDisplay');
 const sortSelect = document.getElementById('sortSelect');
 
-if (totalLocationsDisplay) {
-    totalLocationsDisplay.textContent = totalLocations.toLocaleString();
+function updateTotalLocations() {
+    totalLocations = countries.reduce((acc, curr) => acc + curr.count, 0);
+    if (totalLocationsDisplay) {
+        totalLocationsDisplay.textContent = totalLocations.toLocaleString();
+    }
+}
+
+// Firebase Auth Listener
+onAuthStateChanged(auth, (user) => {
+    isAdmin = !!user;
+    if(countryGrid) renderCountries(countrySearch ? countrySearch.value : '');
+});
+
+// Load Overrides
+async function loadData() {
+    try {
+        const docSnap = await getDoc(doc(db, "data", "countryOverrides"));
+        if (docSnap.exists()) {
+            const overrides = docSnap.data();
+            countries.forEach(c => {
+                if (overrides[c.code] !== undefined) {
+                    c.count = parseInt(overrides[c.code], 10);
+                }
+            });
+            sortData(countries, sortSelect ? sortSelect.value : 'amount-desc');
+        }
+    } catch(e) {
+        console.error(e);
+    }
+    
+    updateTotalLocations();
+    if(countryGrid) renderCountries();
 }
 
 function renderCountries(filter = '') {
@@ -147,6 +183,10 @@ function renderCountries(filter = '') {
     filtered.forEach(country => {
         const percentage = ((country.count / totalLocations) * 100).toFixed(2);
         
+        const countHtml = isAdmin 
+            ? `<span class="loc-count-edit" data-country-code="${country.code}" contenteditable="true" style="border-bottom: 1px dashed var(--accent-primary); outline: none;">${country.count}</span>` 
+            : `${country.count.toLocaleString()}`;
+
         const card = document.createElement('div');
         card.className = 'country-card';
         card.innerHTML = `
@@ -154,7 +194,7 @@ function renderCountries(filter = '') {
             <div class="country-info">
                 <div class="country-name">
                     <span>${country.name}</span>
-                    <span class="loc-count">${country.count.toLocaleString()} (${percentage}%)</span>
+                    <span class="loc-count">${countHtml} (${percentage}%)</span>
                 </div>
                 <div class="progress-container">
                     <div class="progress-bar" style="width: 0%"></div>
@@ -184,14 +224,16 @@ function sortData(arr, sortValue) {
     }
 }
 
-countrySearch.addEventListener('input', (e) => {
+countrySearch?.addEventListener('input', (e) => {
     renderCountries(e.target.value);
 });
 
-sortSelect.addEventListener('change', () => {
+sortSelect?.addEventListener('change', () => {
     renderCountries(countrySearch.value);
 });
 
-// Initial render
-renderCountries();
+// Initial render logic
+updateTotalLocations();
+if(countryGrid) renderCountries();
+loadData();
 
