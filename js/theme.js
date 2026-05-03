@@ -1,9 +1,9 @@
 const themeToggle = document.getElementById('theme-toggle');
 const htmlElement = document.documentElement;
 
-// Check for saved theme preference, default to light
+// Check for saved theme preference, default to dark
 const savedTheme = localStorage.getItem('theme');
-const currentTheme = savedTheme || 'light';
+const currentTheme = savedTheme || 'dark';
 
 // Set initial theme
 htmlElement.setAttribute('data-theme', currentTheme);

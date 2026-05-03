@@ -69,15 +69,15 @@ body {
 }
 
 [data-content-id] {
-    color: inherit !important;
+    color: inherit;
+}
+
+h1[data-content-id], h2[data-content-id], h3[data-content-id] {
+    color: var(--accent-secondary) !important;
 }
 
 [data-content-id] span {
-    color: inherit !important;
-}
-
-[data-content-id] i {
-    color: inherit !important;
+    color: inherit;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -400,7 +400,6 @@ nav {
     font-weight: 700;
     font-size: 1rem;
     color: var(--text-primary);
-    text-transform: uppercase;
 }
 
 .loc-count {

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Location | A Champion World</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="assets/hannog.ico">
+</head>
+<body data-page="report">
+    <div id="global-loader"><div class="spinner"></div></div>
+    <nav>
+        <div class="container nav-content">
+            <a href="index.html" class="logo">A <span>CHAMPION</span> WORLD</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#distribution">Distribution</a></li>
+                <li><a href="info.html">Map Info</a></li>
+                <li><a href="report.html" class="active">Report</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme"></button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container" style="padding-top: 120px; padding-bottom: 100px;">
+        <h1 data-content-id="mainTitle" style="font-size: 3rem; font-weight: 700; margin-bottom: 2rem; letter-spacing: -0.05em; min-height: 3rem;"></h1>
+        
+        <div style="background: var(--bg-card); padding: 3rem; border: 2px solid var(--border-dim); box-shadow: var(--shadow-offset) var(--shadow-offset) 0px var(--border-dim); max-width: 600px; margin: 0 auto;">
+            <p data-content-id="reportDesc" style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 1.0rem; min-height: 1.2rem;"></p>
+            
+            <form id="report-form">
+                <div class="form-group">
+                    <label for="report-reason">Reason for Reporting *</label>
+                    <select id="report-reason" class="sort-select" style="width: 100%; border-radius: 0;" required>
+                        <option value="" disabled selected>Select a reason...</option>
+                        <!-- Reasons populated from Firebase -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location-link">Location Link *</label>
+                    <input type="url" id="location-link" placeholder="https://maps.app.goo.gl/..." style="width: 100%; padding: 0.75rem; border: 2px solid var(--border-dim); background: var(--bg-card); color: var(--text-primary); font-family: inherit;" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="other-details">Other Details (Optional)</label>
+                    <textarea id="other-details" rows="4" style="width: 100%; padding: 0.75rem; border: 2px solid var(--border-dim); background: var(--bg-card); color: var(--text-primary); font-family: inherit; resize: vertical;"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Submit Report</button>
+                <p id="submit-status" style="margin-top: 1rem; text-align: center; font-weight: 600; display: none;"></p>
+            </form>
+        </div>
+    </main>
+
+    <script type="module">
+        import { db } from "./js/firebase-config.js";
+        import { collection, addDoc, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        // Load reasons
+        async function loadReasons() {
+            const reasonSelect = document.getElementById('report-reason');
+            try {
+                const configSnap = await getDoc(doc(db, "config", "reportConfig"));
+                if (configSnap.exists()) {
+                    const reasons = configSnap.data().reasons || [];
+                    reasons.forEach(reason => {
+                        const opt = document.createElement('option');
+                        opt.value = reason;
+                        opt.textContent = reason;
+                        reasonSelect.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error("Error loading reasons:", e);
+            }
+        }
+
+        document.getElementById('report-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const status = document.getElementById('submit-status');
+            const submitBtn = e.target.querySelector('button');
+            
+            const reason = document.getElementById('report-reason').value;
+            const link = document.getElementById('location-link').value;
+            const details = document.getElementById('other-details').value;
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Submitting...";
+
+            try {
+                await addDoc(collection(db, "reports"), {
+                    reason,
+                    link,
+                    details,
+                    status: "unresolved",
+                    timestamp: serverTimestamp()
+                });
+                
+                status.innerText = "Report submitted successfully! Thank you.";
+                status.style.color = "var(--accent-primary)";
+                status.style.display = "block";
+                e.target.reset();
+            } catch (error) {
+                console.error("Error submitting report:", error);
+                status.innerText = "Error submitting report. Please try again later.";
+                status.style.color = "#ef4444";
+                status.style.display = "block";
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit Report";
+            }
+        });
+
+        loadReasons();
+    </script>
+    <script type="module" src="js/content-manager.js"></script>
+    <script src="js/theme.js"></script>
+</body>
+</html>
