@@ -234,6 +234,22 @@ sortSelect?.addEventListener('change', () => {
 
 // Initial render logic
 updateTotalLocations();
-if(countryGrid) renderCountries();
+if(countryGrid) {
+    renderCountries();
+    
+    // Update total locations in real-time as admin types
+    countryGrid.addEventListener('input', (e) => {
+        if (e.target.classList.contains('loc-count-edit')) {
+            const code = e.target.getAttribute('data-country-code');
+            const newCount = parseInt(e.target.innerText.replace(/,/g, ''), 10) || 0;
+            
+            const country = countries.find(c => c.code === code);
+            if (country) {
+                country.count = newCount;
+                updateTotalLocations();
+            }
+        }
+    });
+}
 loadData();
 
