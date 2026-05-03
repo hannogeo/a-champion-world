@@ -151,6 +151,9 @@ onAuthStateChanged(auth, (user) => {
 
 // Load Overrides
 async function loadData() {
+    window.pendingLoads = window.pendingLoads || 0;
+    window.pendingLoads++;
+
     try {
         const docSnap = await getDoc(doc(db, "data", "countryOverrides"));
         if (docSnap.exists()) {
@@ -168,6 +171,18 @@ async function loadData() {
     
     updateTotalLocations();
     if(countryGrid) renderCountries();
+
+    // Notify loader that data is ready
+    if (window.hideLoaderStep) window.hideLoaderStep();
+    else {
+        // Fallback if content-manager hasn't loaded hideLoaderStep yet
+        const checkInterval = setInterval(() => {
+            if (window.hideLoaderStep) {
+                window.hideLoaderStep();
+                clearInterval(checkInterval);
+            }
+        }, 100);
+    }
 }
 
 function renderCountries(filter = '') {
