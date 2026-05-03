@@ -40,6 +40,14 @@ export async function loadContent(pageName) {
         }
     } catch (error) {
         console.error("Error loading content:", error);
+    } finally {
+        const loader = document.getElementById("global-loader");
+        if (loader) {
+            loader.style.opacity = "0";
+            setTimeout(() => {
+                loader.style.display = "none";
+            }, 500);
+        }
     }
 }
 
@@ -62,9 +70,8 @@ function enableAdminMode() {
             right: 2rem;
             background: var(--bg-card);
             padding: 1rem;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--accent-primary);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 2px solid var(--accent-secondary);
+            box-shadow: 4px 4px 0px var(--accent-secondary);
             display: flex;
             gap: 1rem;
             z-index: 9999;

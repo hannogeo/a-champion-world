@@ -8,6 +8,7 @@
     <link rel="icon" href="assets/hannog.ico">
 </head>
 <body data-page="info">
+    <div id="global-loader"><div class="spinner"></div></div>
     <nav>
         <div class="container nav-content">
             <a href="index.html" class="logo">A <span>CHAMPION</span> WORLD</a>
@@ -16,18 +17,19 @@
                 <li><a href="index.html#distribution">Distribution</a></li>
                 <li><a href="info.html" class="active">Map Info</a></li>
                 <li><a href="contact.html">Contact</a></li>
+                <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme"></button></li>
             </ul>
         </div>
     </nav>
 
     <main class="container" style="padding-top: 120px; padding-bottom: 100px;">
-        <h1 data-content-id="mainTitle" style="font-size: 3.5rem; font-weight: 700; margin-bottom: 2rem; letter-spacing: -0.05em;"></h1>
+        <h1 data-content-id="mainTitle" style="font-size: 3rem; font-weight: 700; margin-bottom: 2rem; letter-spacing: -0.05em; min-height: 3rem;"></h1>
         
         <div style="background: var(--bg-card); padding: 3rem; border-radius: var(--radius-xl); border: 1px solid var(--border-dim); max-width: 800px; margin: 0 auto; line-height: 1.8;">
-            <p data-content-id="desc1" style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.0rem; min-height: 1.5rem;"></p>
+            <p data-content-id="desc1" style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.0rem; min-height: 1.2rem;"></p>
             
             <h3 data-content-id="heading1" style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.5rem; min-height: 1.5rem;"></h3>
-            <p data-content-id="desc2" style="color: var(--text-secondary); margin-bottom: 2rem; min-height: 1.5rem;"></p>
+            <p data-content-id="desc2" style="color: var(--text-secondary); margin-bottom: 2rem; min-height: 1.2rem;"></p>
 
             <h3 data-content-id="heading2" style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.5rem; min-height: 1.5rem;"></h3>
             <p data-content-id="desc3" style="color: var(--text-secondary); margin-bottom: 2rem; min-height: 1.5rem;"></p>
@@ -41,5 +43,6 @@
         </div>
     </main>
     <script type="module" src="js/content-manager.js"></script>
+    <script src="js/theme.js"></script>
 </body>
 </html>
