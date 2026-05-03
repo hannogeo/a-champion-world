@@ -73,8 +73,20 @@ function enableAdminMode() {
             border: 2px solid var(--accent-secondary);
             box-shadow: 4px 4px 0px var(--accent-secondary);
             display: flex;
-            gap: 1rem;
+            gap: 0.5rem;
             z-index: 9999;
+        }
+        .admin-toolbar .btn-tool {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-dim);
+            color: var(--text-primary);
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .admin-toolbar .btn-tool:hover {
+            border-color: var(--accent-primary);
         }
     `;
     document.head.appendChild(style);
@@ -89,8 +101,20 @@ function enableAdminMode() {
     const toolbar = document.createElement('div');
     toolbar.className = 'admin-toolbar';
     
+    const linkBtn = document.createElement('button');
+    linkBtn.className = 'btn-tool';
+    linkBtn.innerText = '🔗 Link';
+    linkBtn.onclick = () => {
+        const url = prompt("Enter the URL (include https://):");
+        if (url) {
+            document.execCommand('createLink', false, url);
+        }
+    };
+
     const saveBtn = document.createElement('button');
     saveBtn.className = 'btn btn-primary';
+    saveBtn.style.padding = '0.5rem 1rem';
+    saveBtn.style.fontSize = '0.8rem';
     saveBtn.innerText = 'Save Page Changes';
     saveBtn.onclick = savePageContent;
 
@@ -98,12 +122,15 @@ function enableAdminMode() {
     logoutBtn.className = 'btn';
     logoutBtn.style.background = '#ef4444';
     logoutBtn.style.color = 'white';
+    logoutBtn.style.padding = '0.5rem 1rem';
+    logoutBtn.style.fontSize = '0.8rem';
     logoutBtn.innerText = 'Log Out';
     logoutBtn.onclick = async () => {
         await signOut(auth);
         window.location.reload();
     };
 
+    toolbar.appendChild(linkBtn);
     toolbar.appendChild(saveBtn);
     toolbar.appendChild(logoutBtn);
     document.body.appendChild(toolbar);

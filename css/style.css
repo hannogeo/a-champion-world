@@ -76,6 +76,12 @@ h1[data-content-id], h2[data-content-id], h3[data-content-id] {
     color: var(--accent-secondary) !important;
 }
 
+[data-content-id] a {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    font-weight: 600;
+}
+
 [data-content-id] span {
     color: inherit;
 }
