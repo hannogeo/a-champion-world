@@ -232,6 +232,117 @@ sortSelect?.addEventListener('change', () => {
     renderCountries(countrySearch.value);
 });
 
+// Map Variables
+let map;
+let geoJsonData;
+let countryLayer;
+const mapView = document.getElementById('mapView');
+const showListBtn = document.getElementById('show-list');
+const showMapBtn = document.getElementById('show-map');
+
+function initMap() {
+    if (map) return;
+
+    map = L.map('mapView', {
+        minZoom: 2,
+        maxZoom: 6,
+        worldCopyJump: true
+    }).setView([20, 0], 2);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+
+    fetch('https://raw.githubusercontent.com/datasets/geo-boundaries-world-110m/master/countries.geojson')
+        .then(res => res.json())
+        .then(data => {
+            geoJsonData = data;
+            renderMap();
+        });
+}
+
+function renderMap() {
+    if (!geoJsonData || !map) return;
+    if (countryLayer) map.removeLayer(countryLayer);
+
+    countryLayer = L.geoJson(geoJsonData, {
+        style: (feature) => {
+            const code = feature.properties.iso_a2 ? feature.properties.iso_a2.toLowerCase() : '';
+            const country = countries.find(c => c.code === code);
+            const hasData = !!country;
+
+            return {
+                fillColor: hasData ? 'var(--accent-primary)' : '#d1d1d1',
+                weight: 1,
+                opacity: 1,
+                color: 'var(--border-dim)',
+                fillOpacity: hasData ? 0.7 : 0.2
+            };
+        },
+        onEachFeature: (feature, layer) => {
+            const code = feature.properties.iso_a2 ? feature.properties.iso_a2.toLowerCase() : '';
+            const country = countries.find(c => c.code === code);
+            if (country) {
+                const percentage = ((country.count / totalLocations) * 100).toFixed(2);
+                layer.bindPopup(`
+                    <div style="font-family: 'Outfit', sans-serif; text-align: center;">
+                        <strong style="font-size: 1.1rem;">${country.name}</strong><br>
+                        <span style="font-size: 1.3rem; color: var(--accent-primary); font-weight: 800;">${country.count.toLocaleString()}</span> locations<br>
+                        <span style="font-size: 0.9rem; color: var(--text-secondary);">${percentage}% of map</span>
+                    </div>
+                `, { closeButton: false });
+
+                layer.on({
+                    mouseover: (e) => {
+                        const l = e.target;
+                        l.setStyle({ fillOpacity: 0.9, weight: 2 });
+                    },
+                    mouseout: (e) => {
+                        const l = e.target;
+                        l.setStyle({ fillOpacity: 0.7, weight: 1 });
+                    }
+                });
+            }
+        }
+    }).addTo(map);
+}
+
+// Toggle View Logic
+showListBtn?.addEventListener('click', () => {
+    showListBtn.classList.add('active');
+    showMapBtn.classList.remove('active');
+    countryGrid.style.display = 'grid';
+    mapView.style.display = 'none';
+});
+
+showMapBtn?.addEventListener('click', () => {
+    showMapBtn.classList.add('active');
+    showListBtn.classList.remove('active');
+    countryGrid.style.display = 'none';
+    mapView.style.display = 'block';
+    
+    if (!map) {
+        initMap();
+    } else {
+        renderMap();
+        setTimeout(() => map.invalidateSize(), 100);
+    }
+});
+
+// Update initial render logic to handle map update
+onAuthStateChanged(auth, (user) => {
+    isAdmin = !!user;
+    if(countryGrid) renderCountries(countrySearch ? countrySearch.value : '');
+    if(map) renderMap();
+});
+
+// Update updateTotalLocations to also refresh map if visible
+const originalUpdateTotal = updateTotalLocations;
+updateTotalLocations = function() {
+    originalUpdateTotal();
+    if (map && mapView.style.display !== 'none') renderMap();
+};
+
 // Initial render logic
 updateTotalLocations();
 if(countryGrid) {
@@ -252,4 +363,5 @@ if(countryGrid) {
     });
 }
 loadData();
+
 

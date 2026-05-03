@@ -214,7 +214,7 @@ nav {
     font-size: 3rem;
     font-weight: 800;
     margin-bottom: 1rem;
-    color: var(--accent-secondary) !important;
+    color: var(--text-primary) !important;
     text-transform: uppercase;
     letter-spacing: -0.04em;
 }
@@ -260,6 +260,38 @@ nav {
 .btn-primary:active {
     transform: translate(1px, 1px);
     box-shadow: 2px 2px 0px var(--accent-secondary);
+}
+
+.view-toggle {
+    display: flex;
+    border: 2px solid var(--border-dim);
+    background: var(--bg-card);
+    height: 100%;
+}
+
+.view-toggle button {
+    padding: 0.7rem 1.25rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-transform: uppercase;
+}
+
+.view-toggle button.active {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.view-toggle button:not(:last-child) {
+    border-right: 2px solid var(--border-dim);
+}
+
+.view-toggle button:hover:not(.active) {
+    background: var(--bg-secondary);
 }
 
 /* Stats Header */
@@ -322,7 +354,7 @@ nav {
 
 .search-container input {
     width: 100%;
-    padding: 1rem 1rem 1rem 3rem;
+    padding: 0.7rem 1rem 0.7rem 3rem;
     background-color: var(--bg-card);
     border: 2px solid var(--border-dim);
     color: var(--text-primary);
@@ -346,7 +378,7 @@ nav {
 }
 
 .sort-select {
-    padding: 1rem 3rem 1rem 1rem;
+    padding: 0.7rem 3rem 0.7rem 1rem;
     background-color: var(--bg-card);
     border: 2px solid var(--border-dim);
     color: var(--text-primary);
@@ -424,6 +456,20 @@ nav {
     height: 100%;
     background: var(--accent-primary);
     transition: width 1s ease-out;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
 }
 
 /* Login Box (Admin) */
