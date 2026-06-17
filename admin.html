@@ -288,7 +288,13 @@
                 countryNameToCode = {};
                 countryCodeToName = data;
                 for (const [code, name] of Object.entries(data)) {
-                    countryNameToCode[name.toLowerCase()] = code;
+                    const key = name.toLowerCase();
+                    const isCountry = /^[a-z]{2}$/.test(code);
+                    const existing = countryNameToCode[key];
+                    const existingIsCountry = existing && /^[a-z]{2}$/.test(existing);
+                    if (!existing || (isCountry && !existingIsCountry)) {
+                        countryNameToCode[key] = code;
+                    }
                 }
             }
 
