@@ -12,9 +12,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Check Auth State for Inline Editing (all pages except public index)
+// Check Auth State for Inline Editing
 onAuthStateChanged(auth, (user) => {
-    if (user && pageName && pageName !== 'index') {
+    if (user) {
         isAdmin = true;
         enableAdminMode();
     } else {
@@ -52,6 +52,7 @@ export async function loadContent(pageName) {
 }
 
 function enableAdminMode() {
+    if (document.querySelector('.admin-toolbar')) return;
     // Add visual cues to editable elements
     const style = document.createElement('style');
     style.innerHTML = `

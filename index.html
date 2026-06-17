@@ -22,6 +22,8 @@
                 <li><a href="info.html">Map Info</a></li>
                 <li><a href="report.html">Report</a></li>
                 <li><a href="contact.html">Contact</a></li>
+                <li style="display:none;" id="admin-nav-item"><a href="admin-panel.html" style="position:relative;">Admin Panel <span id="report-badge" style="display:none; position:absolute; top:-8px; right:-18px; background:#ef4444; color:white; font-size:0.65rem; padding:2px 6px; border-radius:10px; font-weight:800;">0</span></a></li>
+                <li style="display:none;" id="logout-nav-item"><button id="logout-btn" style="font-size:0.8rem; padding:0.5rem 1rem; background:#ef4444; color:white; border:none; font-weight:700; text-transform:uppercase; cursor:pointer;">Logout</button></li>
                 <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme"></button></li>
             </ul>
         </div>
@@ -74,6 +76,40 @@
         </section>
     </main>
 
+    <script type="module">
+        import { auth, db } from "./js/firebase-config.js";
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        const adminNav = document.getElementById('admin-nav-item');
+        const logoutNav = document.getElementById('logout-nav-item');
+        const logoutBtn = document.getElementById('logout-btn');
+        const badge = document.getElementById('report-badge');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                adminNav.style.display = '';
+                logoutNav.style.display = '';
+            } else {
+                adminNav.style.display = 'none';
+                logoutNav.style.display = 'none';
+                badge.style.display = 'none';
+            }
+        });
+
+        logoutBtn?.addEventListener('click', () => signOut(auth));
+
+        const q = query(collection(db, "reports"), where("status", "==", "unresolved"));
+        onSnapshot(q, (snapshot) => {
+            const count = snapshot.size;
+            if (count > 0) {
+                badge.innerText = count;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        });
+    </script>
     <script type="module" src="js/script.js"></script>
     <script type="module" src="js/content-manager.js"></script>
     <script src="js/theme.js"></script>
