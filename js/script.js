@@ -155,28 +155,27 @@ async function loadData() {
     window.pendingLoads++;
 
     try {
-        const [overrideSnap, extraSnap] = await Promise.all([
-            getDoc(doc(db, "data", "countryOverrides")),
-            getDoc(doc(db, "data", "extraCountries"))
-        ]);
+        const overrideSnap = await getDoc(doc(db, "data", "countryOverrides"));
+        const data = overrideSnap.exists() ? overrideSnap.data() : {};
+        const overrides = {};
+        const extraNames = data._extraNames || {};
 
-        const overrides = overrideSnap.exists() ? overrideSnap.data() : {};
-
-        if (extraSnap.exists()) {
-            const extraData = extraSnap.data();
-            if (extraData.countries) {
-                Object.entries(extraData.countries).forEach(([code, data]) => {
-                    if (!countries.find(c => c.code === code)) {
-                        countryNames[code.toUpperCase()] = data.name;
-                        countries.push({
-                            code: code,
-                            name: data.name,
-                            count: parseInt(data.count, 10) || 0
-                        });
-                    }
-                });
+        for (const [k, v] of Object.entries(data)) {
+            if (k !== '_extraNames') {
+                overrides[k] = v;
             }
         }
+
+        Object.entries(extraNames).forEach(([code, name]) => {
+            if (!countries.find(c => c.code === code)) {
+                countryNames[code.toUpperCase()] = name;
+                countries.push({
+                    code: code,
+                    name: name,
+                    count: parseInt(overrides[code], 10) || 0
+                });
+            }
+        });
 
         countries.forEach(c => {
             if (overrides[c.code] !== undefined) {

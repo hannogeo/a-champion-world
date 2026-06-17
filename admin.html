@@ -137,7 +137,7 @@
                     <input type="number" id="new-country-count" placeholder="0" min="1" required style="width: 100%; padding: 0.85rem; border: 2px solid var(--border-dim); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
                 </div>
                 <div id="country-lookup-result" style="min-height: 50px; min-width: 80px; display: flex; align-items: center; justify-content: center; padding: 0.25rem 0;"></div>
-                <button type="submit" class="btn btn-primary" id="add-country-btn" disabled>Add Country</button>
+                <button type="button" class="btn btn-primary" id="add-country-btn" disabled>Add Country</button>
             </form>
 
             <h4 style="margin-bottom: 1rem;">Extra Countries Added</h4>
@@ -345,79 +345,103 @@
                 debounceTimer = setTimeout(() => doLookup(val), 500);
             });
 
-            document.getElementById('add-country-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
+            async function addCountry() {
+                try {
+                    if (!pendingCountryCode) {
+                        const name = document.getElementById('new-country-name').value.trim();
+                        if (name) {
+                            await doLookup(name);
+                            if (!pendingCountryCode) {
+                                alert('Could not find that country. Try a different name.');
+                                return;
+                            }
+                        } else {
+                            alert('Please enter a country name.');
+                            return;
+                        }
+                    }
 
-                if (!pendingCountryCode) {
-                    const name = document.getElementById('new-country-name').value.trim();
-                    if (name) {
-                        await doLookup(name);
-                        if (!pendingCountryCode) return;
-                    } else {
+                    const count = parseInt(document.getElementById('new-country-count').value, 10);
+                    if (!count || count < 1) {
+                        alert('Please enter a valid location count.');
                         return;
                     }
+
+                    const docRef = doc(db, "data", "countryOverrides");
+                    const docSnap = await getDoc(docRef);
+                    let overrides = {};
+                    let extraNames = {};
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        overrides = {};
+                        for (const [k, v] of Object.entries(data)) {
+                            if (k === '_extraNames') {
+                                extraNames = v || {};
+                            } else {
+                                overrides[k] = v;
+                            }
+                        }
+                    }
+
+                    if (overrides[pendingCountryCode] !== undefined || extraNames[pendingCountryCode]) {
+                        alert(`"${pendingCountryName}" is already on the map!`);
+                        return;
+                    }
+
+                    overrides[pendingCountryCode] = count;
+                    extraNames[pendingCountryCode] = pendingCountryName;
+
+                    await setDoc(docRef, { ...overrides, _extraNames: extraNames }, { merge: true });
+
+                    document.getElementById('new-country-name').value = '';
+                    document.getElementById('new-country-count').value = '';
+                    document.getElementById('country-lookup-result').innerHTML = '';
+                    document.getElementById('add-country-btn').disabled = true;
+                    pendingCountryCode = null;
+                    pendingCountryName = null;
+                } catch (err) {
+                    console.error('Add country error:', err);
+                    alert('Failed to add country. Check console for details.');
                 }
+            }
 
-                const count = parseInt(document.getElementById('new-country-count').value, 10);
-                if (!count || count < 1) {
-                    alert('Please enter a valid location count.');
-                    return;
-                }
-
-                const docRef = doc(db, "data", "extraCountries");
-                const docSnap = await getDoc(docRef);
-                let countries = {};
-                if (docSnap.exists()) {
-                    countries = docSnap.data().countries || {};
-                }
-
-                if (countries[pendingCountryCode]) {
-                    alert(`"${pendingCountryName}" was already added as an extra country!`);
-                    return;
-                }
-
-                countries[pendingCountryCode] = {
-                    name: pendingCountryName,
-                    count: count,
-                    code: pendingCountryCode
-                };
-
-                await setDoc(docRef, { countries }, { merge: true });
-
-                document.getElementById('new-country-name').value = '';
-                document.getElementById('new-country-count').value = '';
-                document.getElementById('country-lookup-result').innerHTML = '';
-                document.getElementById('add-country-btn').disabled = true;
-                pendingCountryCode = null;
-                pendingCountryName = null;
-            });
+            document.getElementById('add-country-btn').addEventListener('click', addCountry);
+            document.getElementById('add-country-form').addEventListener('submit', (e) => e.preventDefault());
 
             function loadExtraCountriesList() {
                 const list = document.getElementById('extra-countries-list');
-                onSnapshot(doc(db, "data", "extraCountries"), (docSnap) => {
+                onSnapshot(doc(db, "data", "countryOverrides"), (docSnap) => {
                     list.innerHTML = '';
                     if (docSnap.exists()) {
-                        const countries = docSnap.data().countries || {};
-                        const entries = Object.values(countries);
+                        const data = docSnap.data();
+                        const extraNames = data._extraNames || {};
+                        const entries = Object.keys(extraNames);
                         if (entries.length === 0) {
                             list.innerHTML = '<p style="color: var(--text-secondary);">No extra countries added yet.</p>';
                             return;
                         }
-                        entries.forEach(c => {
+                        entries.forEach(code => {
+                            const name = extraNames[code];
+                            const count = data[code] || 0;
                             const chip = document.createElement('div');
                             chip.className = 'reason-chip';
                             chip.style.display = 'flex';
                             chip.style.alignItems = 'center';
                             chip.style.gap = '10px';
-                            chip.innerHTML = `<img src="https://flagcdn.com/w40/${c.code}.png" alt="${c.name}" style="height: 20px; border-radius: 2px;"> ${c.name} <strong>(${c.count.toLocaleString()})</strong> <span class="del-extra-country" data-code="${c.code}" style="cursor:pointer; color:#ef4444; font-weight:800;">×</span>`;
+                            chip.innerHTML = `<img src="https://flagcdn.com/w40/${code}.png" alt="${name}" style="height: 20px; border-radius: 2px;"> ${name} <strong>(${count.toLocaleString()})</strong> <span class="del-extra-country" data-code="${code}" style="cursor:pointer; color:#ef4444; font-weight:800;">×</span>`;
                             list.appendChild(chip);
                         });
 
                         document.querySelectorAll('.del-extra-country').forEach(btn => {
                             btn.addEventListener('click', async () => {
-                                if (confirm(`Remove "${countries[btn.dataset.code].name}" from extra countries?`)) {
-                                    delete countries[btn.dataset.code];
-                                    await setDoc(doc(db, "data", "extraCountries"), { countries }, { merge: true });
+                                if (confirm(`Remove "${extraNames[btn.dataset.code]}" from extra countries?`)) {
+                                    const docRef = doc(db, "data", "countryOverrides");
+                                    const snap = await getDoc(docRef);
+                                    const current = snap.exists() ? snap.data() : {};
+                                    const updatedExtra = current._extraNames || {};
+                                    delete updatedExtra[btn.dataset.code];
+                                    delete current[btn.dataset.code];
+                                    await setDoc(docRef, { ...current, _extraNames: updatedExtra }, { merge: true });
                                 }
                             });
                         });
