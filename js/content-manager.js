@@ -12,9 +12,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Check Auth State for Inline Editing
+// Check Auth State for Inline Editing (admin page only)
 onAuthStateChanged(auth, (user) => {
-    if (user) {
+    if (user && pageName === 'admin') {
         isAdmin = true;
         enableAdminMode();
     } else {
