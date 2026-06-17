@@ -280,6 +280,7 @@
             let pendingCountryName = null;
             let countryNameToCode = null;
             let countryCodeToName = null;
+            let suppressInput = false;
 
             async function loadCountryMap() {
                 if (countryNameToCode) return;
@@ -298,7 +299,7 @@
                 }
             }
 
-            async function lookupCountry(name) {
+            async function doLookup(name) {
                 const resultDiv = document.getElementById('country-lookup-result');
                 resultDiv.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.9rem;">Looking up...</span>';
                 document.getElementById('add-country-btn').disabled = true;
@@ -314,7 +315,10 @@
 
                     pendingCountryCode = code;
                     pendingCountryName = countryCodeToName[code];
+
+                    suppressInput = true;
                     document.getElementById('new-country-name').value = pendingCountryName;
+                    suppressInput = false;
 
                     resultDiv.innerHTML = `<img src="https://flagcdn.com/w80/${code}.png" alt="${pendingCountryName}" style="height: 40px; border: 1px solid var(--border-dim); border-radius: 4px;">`;
                     document.getElementById('add-country-btn').disabled = false;
@@ -326,18 +330,19 @@
             }
 
             const countryNameInput = document.getElementById('new-country-name');
-            const debounceTimer = { id: null };
+            let debounceTimer = null;
 
             countryNameInput.addEventListener('input', () => {
+                if (suppressInput) return;
                 document.getElementById('add-country-btn').disabled = true;
                 document.getElementById('country-lookup-result').innerHTML = '';
                 pendingCountryCode = null;
                 pendingCountryName = null;
 
-                if (debounceTimer.id) clearTimeout(debounceTimer.id);
+                if (debounceTimer) clearTimeout(debounceTimer);
                 const val = countryNameInput.value.trim();
                 if (val.length < 2) return;
-                debounceTimer.id = setTimeout(() => lookupCountry(val), 500);
+                debounceTimer = setTimeout(() => doLookup(val), 500);
             });
 
             document.getElementById('add-country-form').addEventListener('submit', async (e) => {
@@ -346,7 +351,7 @@
                 if (!pendingCountryCode) {
                     const name = document.getElementById('new-country-name').value.trim();
                     if (name) {
-                        await lookupCountry(name);
+                        await doLookup(name);
                         if (!pendingCountryCode) return;
                     } else {
                         return;
