@@ -278,6 +278,19 @@
 
             let pendingCountryCode = null;
             let pendingCountryName = null;
+            let countryNameToCode = null;
+            let countryCodeToName = null;
+
+            async function loadCountryMap() {
+                if (countryNameToCode) return;
+                const res = await fetch('https://flagcdn.com/en/codes.json');
+                const data = await res.json();
+                countryNameToCode = {};
+                countryCodeToName = data;
+                for (const [code, name] of Object.entries(data)) {
+                    countryNameToCode[name.toLowerCase()] = code;
+                }
+            }
 
             async function lookupCountry(name) {
                 const resultDiv = document.getElementById('country-lookup-result');
@@ -285,17 +298,19 @@
                 document.getElementById('add-country-btn').disabled = true;
 
                 try {
-                    const res = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fields=name,cca2,flags`);
-                    if (!res.ok) throw new Error('Not found');
-                    const data = await res.json();
-                    if (!data || data.length === 0) throw new Error('Not found');
+                    await loadCountryMap();
+                    const key = name.trim().toLowerCase();
+                    const code = countryNameToCode[key];
 
-                    const country = data[0];
-                    pendingCountryCode = country.cca2.toLowerCase();
-                    pendingCountryName = country.name.common;
+                    if (!code) {
+                        throw new Error('Not found');
+                    }
+
+                    pendingCountryCode = code;
+                    pendingCountryName = countryCodeToName[code];
                     document.getElementById('new-country-name').value = pendingCountryName;
 
-                    resultDiv.innerHTML = `<img src="${country.flags.png}" alt="${pendingCountryName}" style="height: 40px; border: 1px solid var(--border-dim); border-radius: 4px;">`;
+                    resultDiv.innerHTML = `<img src="https://flagcdn.com/w80/${code}.png" alt="${pendingCountryName}" style="height: 40px; border: 1px solid var(--border-dim); border-radius: 4px;">`;
                     document.getElementById('add-country-btn').disabled = false;
                 } catch (e) {
                     resultDiv.innerHTML = '<span style="color: #ef4444; font-size: 0.9rem;">Country not found</span>';
