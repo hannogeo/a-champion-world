@@ -89,6 +89,7 @@
             <button class="tab-link active" data-tab="content">1. Site Editor</button>
             <button class="tab-link" data-tab="reports">2. Reported Locs <span id="notif-badge" class="report-badge">0</span></button>
             <button class="tab-link" data-tab="settings">3. Dropdown Settings (Config)</button>
+            <button class="tab-link" data-tab="countries">4. Country Distribution</button>
         </div>
 
         <!-- Content Tab -->
@@ -119,6 +120,30 @@
                 <input type="text" id="new-reason" placeholder="e.g. Broken Camera, Wrong Country..." style="flex-grow: 1; padding: 0.85rem; border: 2px solid var(--border-dim); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
                 <button type="submit" class="btn btn-primary">Add to Dropdown</button>
             </form>
+        </div>
+
+        <!-- Countries Tab -->
+        <div id="tab-countries" class="tab-pane" style="display: none; background: var(--bg-card); padding: 2rem; border: 2px solid var(--border-dim);">
+            <h3 style="margin-bottom: 1rem;">Add New Country</h3>
+            <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Enter a country name and its location count. The flag will be detected automatically.</p>
+            
+            <form id="add-country-form" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin-bottom: 2rem; padding: 1.5rem; border: 1px dashed var(--border-bright);">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 0.4rem; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary);">Country Name</label>
+                    <input type="text" id="new-country-name" placeholder="e.g. Fiji, Myanmar..." required style="width: 100%; padding: 0.85rem; border: 2px solid var(--border-dim); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                </div>
+                <div style="flex: 0 0 130px;">
+                    <label style="display: block; margin-bottom: 0.4rem; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary);">Locations</label>
+                    <input type="number" id="new-country-count" placeholder="0" min="1" required style="width: 100%; padding: 0.85rem; border: 2px solid var(--border-dim); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                </div>
+                <div id="country-lookup-result" style="min-height: 50px; min-width: 80px; display: flex; align-items: center; justify-content: center; padding: 0.25rem 0;"></div>
+                <button type="submit" class="btn btn-primary" id="add-country-btn" disabled>Add Country</button>
+            </form>
+
+            <h4 style="margin-bottom: 1rem;">Extra Countries Added</h4>
+            <div id="extra-countries-list" style="display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 1rem; border: 1px dashed var(--border-bright); min-height: 60px;">
+                <p style="color: var(--text-secondary);">Loading...</p>
+            </div>
         </div>
     </div>
 
@@ -248,6 +273,135 @@
                 }
                 document.getElementById('new-reason').value = '';
             });
+
+            // ─── Country Management ───────────────────────────────
+
+            let pendingCountryCode = null;
+            let pendingCountryName = null;
+
+            async function lookupCountry(name) {
+                const resultDiv = document.getElementById('country-lookup-result');
+                resultDiv.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.9rem;">Looking up...</span>';
+                document.getElementById('add-country-btn').disabled = true;
+
+                try {
+                    const res = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fields=name,cca2,flags`);
+                    if (!res.ok) throw new Error('Not found');
+                    const data = await res.json();
+                    if (!data || data.length === 0) throw new Error('Not found');
+
+                    const country = data[0];
+                    pendingCountryCode = country.cca2.toLowerCase();
+                    pendingCountryName = country.name.common;
+                    document.getElementById('new-country-name').value = pendingCountryName;
+
+                    resultDiv.innerHTML = `<img src="${country.flags.png}" alt="${pendingCountryName}" style="height: 40px; border: 1px solid var(--border-dim); border-radius: 4px;">`;
+                    document.getElementById('add-country-btn').disabled = false;
+                } catch (e) {
+                    resultDiv.innerHTML = '<span style="color: #ef4444; font-size: 0.9rem;">Country not found</span>';
+                    pendingCountryCode = null;
+                    pendingCountryName = null;
+                }
+            }
+
+            const countryNameInput = document.getElementById('new-country-name');
+            const debounceTimer = { id: null };
+
+            countryNameInput.addEventListener('input', () => {
+                document.getElementById('add-country-btn').disabled = true;
+                document.getElementById('country-lookup-result').innerHTML = '';
+                pendingCountryCode = null;
+                pendingCountryName = null;
+
+                if (debounceTimer.id) clearTimeout(debounceTimer.id);
+                const val = countryNameInput.value.trim();
+                if (val.length < 2) return;
+                debounceTimer.id = setTimeout(() => lookupCountry(val), 500);
+            });
+
+            document.getElementById('add-country-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                if (!pendingCountryCode) {
+                    const name = document.getElementById('new-country-name').value.trim();
+                    if (name) {
+                        await lookupCountry(name);
+                        if (!pendingCountryCode) return;
+                    } else {
+                        return;
+                    }
+                }
+
+                const count = parseInt(document.getElementById('new-country-count').value, 10);
+                if (!count || count < 1) {
+                    alert('Please enter a valid location count.');
+                    return;
+                }
+
+                const docRef = doc(db, "data", "extraCountries");
+                const docSnap = await getDoc(docRef);
+                let countries = {};
+                if (docSnap.exists()) {
+                    countries = docSnap.data().countries || {};
+                }
+
+                if (countries[pendingCountryCode]) {
+                    alert(`"${pendingCountryName}" was already added as an extra country!`);
+                    return;
+                }
+
+                countries[pendingCountryCode] = {
+                    name: pendingCountryName,
+                    count: count,
+                    code: pendingCountryCode
+                };
+
+                await setDoc(docRef, { countries }, { merge: true });
+
+                document.getElementById('new-country-name').value = '';
+                document.getElementById('new-country-count').value = '';
+                document.getElementById('country-lookup-result').innerHTML = '';
+                document.getElementById('add-country-btn').disabled = true;
+                pendingCountryCode = null;
+                pendingCountryName = null;
+            });
+
+            function loadExtraCountriesList() {
+                const list = document.getElementById('extra-countries-list');
+                onSnapshot(doc(db, "data", "extraCountries"), (docSnap) => {
+                    list.innerHTML = '';
+                    if (docSnap.exists()) {
+                        const countries = docSnap.data().countries || {};
+                        const entries = Object.values(countries);
+                        if (entries.length === 0) {
+                            list.innerHTML = '<p style="color: var(--text-secondary);">No extra countries added yet.</p>';
+                            return;
+                        }
+                        entries.forEach(c => {
+                            const chip = document.createElement('div');
+                            chip.className = 'reason-chip';
+                            chip.style.display = 'flex';
+                            chip.style.alignItems = 'center';
+                            chip.style.gap = '10px';
+                            chip.innerHTML = `<img src="https://flagcdn.com/w40/${c.code}.png" alt="${c.name}" style="height: 20px; border-radius: 2px;"> ${c.name} <strong>(${c.count.toLocaleString()})</strong> <span class="del-extra-country" data-code="${c.code}" style="cursor:pointer; color:#ef4444; font-weight:800;">×</span>`;
+                            list.appendChild(chip);
+                        });
+
+                        document.querySelectorAll('.del-extra-country').forEach(btn => {
+                            btn.addEventListener('click', async () => {
+                                if (confirm(`Remove "${countries[btn.dataset.code].name}" from extra countries?`)) {
+                                    delete countries[btn.dataset.code];
+                                    await setDoc(doc(db, "data", "extraCountries"), { countries }, { merge: true });
+                                }
+                            });
+                        });
+                    } else {
+                        list.innerHTML = '<p style="color: var(--text-secondary);">No extra countries added yet.</p>';
+                    }
+                });
+            }
+
+            loadExtraCountriesList();
         }
     </script>
     <script src="js/theme.js"></script>

@@ -149,22 +149,42 @@ onAuthStateChanged(auth, (user) => {
     if(countryGrid) renderCountries(countrySearch ? countrySearch.value : '');
 });
 
-// Load Overrides
+// Load Overrides & Extra Countries
 async function loadData() {
     window.pendingLoads = window.pendingLoads || 0;
     window.pendingLoads++;
 
     try {
-        const docSnap = await getDoc(doc(db, "data", "countryOverrides"));
-        if (docSnap.exists()) {
-            const overrides = docSnap.data();
-            countries.forEach(c => {
-                if (overrides[c.code] !== undefined) {
-                    c.count = parseInt(overrides[c.code], 10);
-                }
-            });
-            sortData(countries, sortSelect ? sortSelect.value : 'amount-desc');
+        const [overrideSnap, extraSnap] = await Promise.all([
+            getDoc(doc(db, "data", "countryOverrides")),
+            getDoc(doc(db, "data", "extraCountries"))
+        ]);
+
+        const overrides = overrideSnap.exists() ? overrideSnap.data() : {};
+
+        if (extraSnap.exists()) {
+            const extraData = extraSnap.data();
+            if (extraData.countries) {
+                Object.entries(extraData.countries).forEach(([code, data]) => {
+                    if (!countries.find(c => c.code === code)) {
+                        countryNames[code.toUpperCase()] = data.name;
+                        countries.push({
+                            code: code,
+                            name: data.name,
+                            count: parseInt(data.count, 10) || 0
+                        });
+                    }
+                });
+            }
         }
+
+        countries.forEach(c => {
+            if (overrides[c.code] !== undefined) {
+                c.count = parseInt(overrides[c.code], 10);
+            }
+        });
+
+        sortData(countries, sortSelect ? sortSelect.value : 'amount-desc');
     } catch(e) {
         console.error(e);
     }
