@@ -144,7 +144,10 @@ function updateTotalLocations() {
 }
 
 // Firebase Auth Listener
-const isAdminPage = () => document.body.dataset.page === 'admin';
+const isAdminPage = () => {
+    const page = document.body.dataset.page;
+    return page && page !== 'index';
+};
 
 onAuthStateChanged(auth, (user) => {
     isAdmin = !!user && isAdminPage();
@@ -367,7 +370,7 @@ showMapBtn?.addEventListener('click', () => {
 
 // Update initial render logic to handle map update
 onAuthStateChanged(auth, (user) => {
-    isAdmin = !!user && isAdminPage();
+    isAdmin = !!user && document.body.dataset.page !== 'index';
     if(countryGrid) renderCountries(countrySearch ? countrySearch.value : '');
     if(map) renderMap();
 });

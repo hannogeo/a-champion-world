@@ -50,8 +50,7 @@
             padding: 0.5rem 1rem; font-size: 0.8rem; margin-top: 1rem;
         }
 
-        .admin-section { display: none; margin-bottom: 6rem; }
-        .admin-section.visible { display: block; }
+        .admin-section { margin-bottom: 6rem; }
     </style>
 </head>
 <body data-page="admin">
@@ -95,8 +94,8 @@
     <!-- Hero -->
     <header class="hero">
         <div class="container">
-            <h1 data-content-id="heroTitle" style="min-height: 3rem;"></h1>
-            <p data-content-id="heroDesc" style="min-height: 1.2rem;"></p>
+            <h1>A <span>CHAMPION</span> WORLD — Admin</h1>
+            <p>Manage your GeoGuessr map's country distribution, reports, and settings.</p>
             <div class="hero-btns">
                 <a href="https://www.geoguessr.com/maps/696f4c53d53961f07bf239bd" class="btn btn-primary" target="_blank" rel="noopener noreferrer" style="font-weight: 600;">PLAY NOW</a>
             </div>
@@ -107,8 +106,8 @@
     <main class="container">
         <section id="distribution" class="stats-header">
             <div class="stats-title">
-                <h2 data-content-id="distTitle" style="min-height: 2rem;"></h2>
-                <p data-content-id="distSub" style="min-height: 1.2rem;"></p>
+                <h2>Country Distribution</h2>
+                <p>Browse and edit locations across all countries in the map.</p>
                 <div class="total-locations-badge">
                     <span class="badge-label">Total Locations:</span>
                     <span class="badge-value" id="totalLocationsDisplay"></span>
@@ -212,17 +211,22 @@
         const logoutBtn = document.getElementById('logout-btn');
         const notifBadge = document.getElementById('notif-badge');
 
+        let adminPanelOpen = false;
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 loginView.classList.add('hidden');
                 adminToggle.style.display = '';
                 logoutBtn.style.display = '';
+                adminPanelOpen = false;
+                adminSection.style.display = 'none';
                 initAdminPanel();
             } else {
                 loginView.classList.remove('hidden');
                 adminToggle.style.display = 'none';
                 logoutBtn.style.display = 'none';
-                adminSection.classList.remove('visible');
+                adminSection.style.display = 'none';
+                adminPanelOpen = false;
             }
             document.getElementById('global-loader').style.opacity = '0';
             setTimeout(() => document.getElementById('global-loader').style.display = 'none', 500);
@@ -244,8 +248,12 @@
         logoutBtn.addEventListener('click', () => signOut(auth));
 
         adminToggle.addEventListener('click', () => {
-            adminSection.classList.toggle('visible');
-            adminToggle.textContent = adminSection.classList.contains('visible') ? 'Close Panel' : 'Admin Panel';
+            adminPanelOpen = !adminPanelOpen;
+            adminSection.style.display = adminPanelOpen ? 'block' : 'none';
+            adminToggle.textContent = adminPanelOpen ? 'Close Panel' : 'Admin Panel';
+            if (adminPanelOpen) {
+                adminSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         });
 
         // Tab Logic
