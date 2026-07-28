@@ -21,19 +21,22 @@
                 <li><a href="#distribution">Distribution</a></li>
                 <li><a href="info.html">Map Info</a></li>
                 <li><a href="contact.html">Contact</a></li>
-                <li style="display:none;" id="admin-nav-item"><a href="admin-panel.html" style="position:relative;">Admin Panel <span id="report-badge" style="display:none; position:absolute; top:-8px; right:-18px; background:#ef4444; color:white; font-size:0.65rem; padding:2px 6px; border-radius:10px; font-weight:800;">0</span></a></li>
-                <li style="display:none;" id="logout-nav-item"><button id="logout-btn" style="font-size:0.8rem; padding:0.5rem 1rem; background:#ef4444; color:white; border:none; font-weight:700; text-transform:uppercase; cursor:pointer;">Logout</button></li>
+                <li style="display:none;" id="admin-nav-item"><a href="admin.html" style="position:relative;">Admin Panel <span id="report-badge" class="report-badge" style="display:none;">0</span></a></li>
+                <li style="display:none;" id="logout-nav-item"><button id="logout-btn" class="logout-btn">Logout</button></li>
                 <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme"></button></li>
             </ul>
         </div>
     </nav>
 
     <header class="hero">
+        <div class="hero-bg">
+            <div class="hero-glow"></div>
+        </div>
         <div class="container">
             <h1 data-content-id="heroTitle" style="min-height: 3rem;"></h1>
             <p data-content-id="heroDesc" style="min-height: 1.2rem;"></p>
             <div class="hero-btns">
-                <a href="https://www.geoguessr.com/maps/696f4c53d53961f07bf239bd" class="btn btn-primary" target="_blank" rel="noopener noreferrer" style="font-weight: 600;">PLAY NOW</a>
+                <a href="https://www.geoguessr.com/maps/696f4c53d53961f07bf239bd" class="btn btn-primary" target="_blank" rel="noopener noreferrer">PLAY NOW</a>
             </div>
         </div>
     </header>
@@ -68,7 +71,7 @@
             </div>
         </section>
 
-        <div id="mapView" style="height: 600px; width: 100%; border: 2px solid var(--border-dim); margin-bottom: 6rem; display: none; background: var(--bg-card); box-shadow: var(--shadow-offset) var(--shadow-offset) 0px var(--border-dim); position: relative; z-index: 1;"></div>
+        <div id="mapView"></div>
 
         <section class="country-grid" id="countryGrid">
             <!-- Dynamically populated via script.js -->
@@ -108,6 +111,54 @@
                 badge.style.display = 'none';
             }
         });
+
+        // Custom dropdown for sort select
+        (function() {
+            const select = document.getElementById('sortSelect');
+            if (!select) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'custom-select-wrapper';
+
+            const trigger = document.createElement('div');
+            trigger.className = 'custom-select-trigger';
+            trigger.innerHTML = `${select.options[select.selectedIndex].text} <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+            const menu = document.createElement('div');
+            menu.className = 'custom-select-menu';
+
+            Array.from(select.options).forEach((opt, i) => {
+                const div = document.createElement('div');
+                div.className = 'custom-select-option' + (opt.selected ? ' selected' : '');
+                div.textContent = opt.text;
+                div.dataset.value = opt.value;
+                div.addEventListener('click', () => {
+                    select.value = opt.value;
+                    select.dispatchEvent(new Event('change'));
+                    trigger.innerHTML = `${opt.text} <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+                    menu.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+                    div.classList.add('selected');
+                    menu.classList.remove('open');
+                    trigger.classList.remove('open');
+                });
+                menu.appendChild(div);
+            });
+
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = menu.classList.toggle('open');
+                trigger.classList.toggle('open', isOpen);
+            });
+
+            document.addEventListener('click', () => {
+                menu.classList.remove('open');
+                trigger.classList.remove('open');
+            });
+
+            wrapper.appendChild(trigger);
+            wrapper.appendChild(menu);
+            select.parentNode.insertBefore(wrapper, select.nextSibling);
+        })();
     </script>
     <script type="module" src="js/script.js"></script>
     <script type="module" src="js/content-manager.js"></script>

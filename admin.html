@@ -3,154 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | A Champion World</title>
+    <title>Admin Panel | A Champion World</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="assets/hannog.ico">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
-        .login-view { 
-            height: 100vh; display: flex; justify-content: center; align-items: center; 
-            background: var(--bg-primary); 
-            position: fixed; inset: 0; z-index: 10000;
-        }
-        .login-view.hidden { display: none !important; }
-
-        .tab-nav {
-            display: flex; gap: 1rem; margin-bottom: 3rem; border-bottom: 2px solid var(--border-dim);
-            padding-bottom: 10px;
-        }
-        .tab-link {
-            padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 700; text-transform: uppercase;
-            color: var(--text-secondary); border: 2px solid var(--border-dim); transition: var(--transition);
-            position: relative; background: var(--bg-secondary);
-        }
-        .tab-link.active { 
-            color: white; background: var(--accent-primary); border-color: var(--accent-primary);
-            box-shadow: 4px 4px 0px var(--accent-secondary); transform: translate(-2px, -2px);
-        }
-        
-        .report-badge {
-            position: absolute; top: 0; right: -15px; background: #ef4444; color: white;
-            font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; display: none;
-        }
-
-        .report-card {
-            background: var(--bg-card); border: 2px solid var(--border-dim); padding: 1.5rem;
-            margin-bottom: 1.5rem; box-shadow: 4px 4px 0px var(--border-dim);
-        }
-        .report-card.resolved { opacity: 0.6; }
-        
-        .reason-chip {
-            background: var(--bg-secondary); border: 1px solid var(--border-dim);
-            padding: 0.2rem 0.6rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
-        }
-
-        .action-btn {
-            padding: 0.5rem 1rem; font-size: 0.8rem; margin-top: 1rem;
-        }
-
-        .admin-section { margin-bottom: 6rem; }
+        .tab-link { position: relative; }
+        .action-btn { margin-top: 1rem; }
     </style>
 </head>
-<body data-page="admin">
-    <div id="global-loader"><div class="spinner"></div></div>
+<body data-page="admin-panel">
+    <div id="global-loader" style="display:none;"><div class="spinner"></div></div>
     
     <nav>
         <div class="container nav-content">
             <a href="index.html" class="logo">A <span>CHAMPION</span> WORLD</a>
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="#distribution">Distribution</a></li>
                 <li><a href="info.html">Map Info</a></li>
                 <li><a href="contact.html">Contact</a></li>
-                <li><button id="admin-toggle" style="display:none; font-size:0.8rem; padding:0.5rem 1rem; background:var(--accent-primary); color:white; border:2px solid var(--accent-primary); font-weight:700; text-transform:uppercase; cursor:pointer;">Admin Panel</button></li>
-                <li><button id="logout-btn" style="display:none; font-size:0.8rem; padding:0.5rem 1rem; background:#ef4444; color:white; border:none; font-weight:700; text-transform:uppercase; cursor:pointer;">Logout</button></li>
+                <li><a href="admin.html" style="position:relative;">Admin Panel <span id="notif-badge" class="report-badge">0</span></a></li>
+                <li><button id="logout-btn" class="logout-btn">Logout</button></li>
                 <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme"></button></li>
             </ul>
         </div>
     </nav>
 
-    <!-- Login Overlay -->
-    <div id="login-view" class="login-view">
-        <div class="login-box">
-            <h2 style="margin-bottom: 1.5rem;">Admin Access</h2>
-            <div id="error-message" style="color: #ef4444; margin-bottom: 1rem; display: none;"></div>
-            <form id="login-form">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="email" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="password" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Hero -->
-    <header class="hero">
-        <div class="container">
-            <h1>A <span>CHAMPION</span> WORLD — Admin</h1>
-            <p>Manage your GeoGuessr map's country distribution, reports, and settings.</p>
-            <div class="hero-btns">
-                <a href="https://www.geoguessr.com/maps/696f4c53d53961f07bf239bd" class="btn btn-primary" target="_blank" rel="noopener noreferrer" style="font-weight: 600;">PLAY NOW</a>
-            </div>
-        </div>
-    </header>
-
-    <!-- Country Distribution -->
-    <main class="container">
-        <section id="distribution" class="stats-header">
-            <div class="stats-title">
-                <h2>Country Distribution</h2>
-                <p>Browse and edit locations across all countries in the map.</p>
-                <div class="total-locations-badge">
-                    <span class="badge-label">Total Locations:</span>
-                    <span class="badge-value" id="totalLocationsDisplay"></span>
-                </div>
-            </div>
-            <div class="controls-container">
-                <div class="view-toggle">
-                    <button id="show-list" class="active">List</button>
-                    <button id="show-map">Map</button>
-                </div>
-                <div class="search-container">
-                    <svg class="search-icon" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    <input type="text" id="countrySearch" placeholder="Search by name or code...">
-                </div>
-                <select id="sortSelect" class="sort-select">
-                    <option value="amount-desc">Amount (High to Low)</option>
-                    <option value="amount-asc">Amount (Low to High)</option>
-                    <option value="name-asc">Name (A-Z)</option>
-                    <option value="name-desc">Name (Z-A)</option>
-                </select>
-            </div>
-        </section>
-
-        <div id="mapView" style="height: 600px; width: 100%; border: 2px solid var(--border-dim); margin-bottom: 6rem; display: none; background: var(--bg-card); box-shadow: var(--shadow-offset) var(--shadow-offset) 0px var(--border-dim); position: relative; z-index: 1;"></div>
-
-        <section class="country-grid" id="countryGrid">
-            <!-- Populated via script.js -->
-        </section>
-    </main>
-
-    <!-- Admin Panel -->
-    <div id="admin-section" class="admin-section container">
-        <h2 style="margin-bottom: 2rem; border-bottom: 3px solid var(--accent-primary); display: inline-block;">Admin Panel</h2>
+    <main class="container" style="padding-top: 120px; padding-bottom: 6rem;">
+        <h1 class="page-title-underline">Admin Panel</h1>
         
         <div class="tab-nav">
-            <button class="tab-link active" data-tab="reports">Reports <span id="notif-badge" class="report-badge">0</span></button>
+            <button class="tab-link active" data-tab="reports">Reports <span id="tab-notif-badge" class="report-badge">0</span></button>
             <button class="tab-link" data-tab="settings">Settings</button>
             <button class="tab-link" data-tab="countries">Countries</button>
         </div>
 
         <!-- Reports Tab -->
-        <div id="tab-reports" class="tab-pane" style="background: var(--bg-card); padding: 2rem; border: 2px solid var(--border-dim);">
+        <div id="tab-reports" class="tab-pane">
             <h3 style="margin-bottom: 1.5rem;">Reported Broken Locations</h3>
             <div id="reports-list">
                 <p>Loading reports...</p>
@@ -158,104 +46,62 @@
         </div>
 
         <!-- Settings Tab -->
-        <div id="tab-settings" class="tab-pane" style="display: none; background: var(--bg-card); padding: 2rem; border: 2px solid var(--border-dim);">
+        <div id="tab-settings" class="tab-pane" style="display: none;">
             <h3 style="margin-bottom: 1rem;">Manage Report Reasons</h3>
             <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">These are the options that appear in the "Reason for Reporting" dropdown menu on the Report page.</p>
-            <div id="reasons-list" style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2rem; padding: 1rem; border: 1px dashed var(--border-bright);">
-                <!-- Chips go here -->
-            </div>
+            <div id="reasons-list" style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2rem; padding: 1rem; border: 1px dashed var(--border-bright);"></div>
             
             <h4 style="margin-bottom: 1rem;">Add New Option</h4>
             <form id="add-reason-form" style="display: flex; gap: 1rem;">
-                <input type="text" id="new-reason" placeholder="e.g. Broken Camera, Wrong Country..." style="flex-grow: 1; padding: 0.85rem; border: 2px solid var(--border-dim); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                <input type="text" id="new-reason" placeholder="e.g. Broken Camera, Wrong Country..." style="flex-grow: 1; padding: 0.85rem; border: 1px solid var(--border-dim); background: var(--bg-primary); color: var(--text-primary); font-family: inherit; border-radius: var(--radius-sm);">
                 <button type="submit" class="btn btn-primary">Add to Dropdown</button>
             </form>
         </div>
 
         <!-- Countries Tab -->
-        <div id="tab-countries" class="tab-pane" style="display: none; background: var(--bg-card); padding: 2rem; border: 2px solid var(--border-dim);">
+        <div id="tab-countries" class="tab-pane" style="display: none;">
             <h3 style="margin-bottom: 1rem;">Add New Country</h3>
             <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Enter a country name and its location count. The flag will be detected automatically.</p>
             
-            <form id="add-country-form" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin-bottom: 2rem; padding: 1.5rem; border: 1px dashed var(--border-bright);">
+            <form id="add-country-form" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin-bottom: 2rem; padding: 1.5rem; border: 1px dashed var(--border-bright); border-radius: var(--radius-sm);">
                 <div style="flex: 1; min-width: 200px;">
-                    <label style="display: block; margin-bottom: 0.4rem; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary);">Country Name</label>
-                    <input type="text" id="new-country-name" placeholder="e.g. Fiji, Myanmar..." required style="width: 100%; padding: 0.85rem; border: 2px solid var(--border-dim); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                    <label style="display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary);">Country Name</label>
+                    <input type="text" id="new-country-name" placeholder="e.g. Fiji, Myanmar..." required style="width: 100%; padding: 0.85rem; border: 1px solid var(--border-dim); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
                 </div>
                 <div style="flex: 0 0 130px;">
-                    <label style="display: block; margin-bottom: 0.4rem; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary);">Locations</label>
-                    <input type="number" id="new-country-count" placeholder="0" min="1" required style="width: 100%; padding: 0.85rem; border: 2px solid var(--border-dim); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                    <label style="display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary);">Locations</label>
+                    <input type="number" id="new-country-count" placeholder="0" min="1" required style="width: 100%; padding: 0.85rem; border: 1px solid var(--border-dim); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
                 </div>
                 <div id="country-lookup-result" style="min-height: 50px; min-width: 80px; display: flex; align-items: center; justify-content: center; padding: 0.25rem 0;"></div>
                 <button type="button" class="btn btn-primary" id="add-country-btn" disabled>Add Country</button>
             </form>
 
             <h4 style="margin-bottom: 1rem;">Extra Countries Added</h4>
-            <div id="extra-countries-list" style="display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 1rem; border: 1px dashed var(--border-bright); min-height: 60px;">
+            <div id="extra-countries-list" style="display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 1rem; border: 1px dashed var(--border-bright); border-radius: var(--radius-sm); min-height: 60px;">
                 <p style="color: var(--text-secondary);">Loading...</p>
             </div>
         </div>
-    </div>
+    </main>
 
-    <script type="module" src="js/script.js"></script>
-    <script type="module" src="js/content-manager.js"></script>
     <script type="module">
         import { auth, db } from "./js/firebase-config.js";
         import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
         import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        const loginView = document.getElementById('login-view');
-        const adminSection = document.getElementById('admin-section');
-        const adminToggle = document.getElementById('admin-toggle');
-        const logoutBtn = document.getElementById('logout-btn');
         const notifBadge = document.getElementById('notif-badge');
-
-        let adminPanelOpen = false;
+        const tabNotifBadge = document.getElementById('tab-notif-badge');
 
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                loginView.classList.add('hidden');
-                adminToggle.style.display = '';
-                logoutBtn.style.display = '';
-                adminPanelOpen = false;
-                adminSection.style.display = 'none';
-                initAdminPanel();
-            } else {
-                loginView.classList.remove('hidden');
-                adminToggle.style.display = 'none';
-                logoutBtn.style.display = 'none';
-                adminSection.style.display = 'none';
-                adminPanelOpen = false;
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
             }
-            document.getElementById('global-loader').style.opacity = '0';
-            setTimeout(() => document.getElementById('global-loader').style.display = 'none', 500);
+            document.getElementById('global-loader').style.display = 'none';
+            initPanel();
         });
 
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (err) {
-                const errDiv = document.getElementById('error-message');
-                errDiv.innerText = err.message;
-                errDiv.style.display = 'block';
-            }
-        });
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-        logoutBtn.addEventListener('click', () => signOut(auth));
-
-        adminToggle.addEventListener('click', () => {
-            adminPanelOpen = !adminPanelOpen;
-            adminSection.style.display = adminPanelOpen ? 'block' : 'none';
-            adminToggle.textContent = adminPanelOpen ? 'Close Panel' : 'Admin Panel';
-            if (adminPanelOpen) {
-                adminSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        });
-
-        // Tab Logic
         document.querySelectorAll('.tab-link').forEach(link => {
             link.addEventListener('click', () => {
                 document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
@@ -265,13 +111,15 @@
             });
         });
 
-        function initAdminPanel() {
+        function initPanel() {
             // Monitor Reports
             const q = query(collection(db, "reports"), where("status", "==", "unresolved"));
             onSnapshot(q, (snapshot) => {
                 const count = snapshot.size;
                 notifBadge.innerText = count;
                 notifBadge.style.display = count > 0 ? 'block' : 'none';
+                tabNotifBadge.innerText = count;
+                tabNotifBadge.style.display = count > 0 ? 'block' : 'none';
                 
                 const list = document.getElementById('reports-list');
                 list.innerHTML = count === 0 ? '<p>No unresolved reports! Good job.</p>' : '';

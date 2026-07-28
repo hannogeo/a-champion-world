@@ -295,34 +295,42 @@ function initMap() {
         });
 }
 
+function resolveGeoCode(feature) {
+    const raw = feature.properties.iso_a2 ? feature.properties.iso_a2.toLowerCase() : '';
+    const overrides = { '-99': 'xk' };
+    const wb = (feature.properties.wb_a2 || '').toLowerCase();
+    if (raw === '-99' && wb && countries.find(c => c.code === wb)) return wb;
+    return overrides[raw] || raw;
+}
+
 function renderMap() {
     if (!geoJsonData || !map) return;
     if (countryLayer) map.removeLayer(countryLayer);
 
     countryLayer = L.geoJson(geoJsonData, {
         style: (feature) => {
-            const code = feature.properties.iso_a2 ? feature.properties.iso_a2.toLowerCase() : '';
+            const code = resolveGeoCode(feature);
             const country = countries.find(c => c.code === code);
             const hasData = !!country;
 
             return {
-                fillColor: hasData ? 'var(--accent-primary)' : '#d1d1d1',
+                fillColor: hasData ? 'var(--accent-primary)' : '#2a2f3a',
                 weight: 1,
                 opacity: 1,
                 color: 'var(--border-dim)',
-                fillOpacity: hasData ? 0.7 : 0.2
+                fillOpacity: hasData ? 0.7 : 0.15
             };
         },
         onEachFeature: (feature, layer) => {
-            const code = feature.properties.iso_a2 ? feature.properties.iso_a2.toLowerCase() : '';
+            const code = resolveGeoCode(feature);
             const country = countries.find(c => c.code === code);
             if (country) {
                 const percentage = ((country.count / totalLocations) * 100).toFixed(2);
                 layer.bindPopup(`
-                    <div style="font-family: 'Outfit', sans-serif; text-align: center;">
-                        <strong style="font-size: 1.1rem;">${country.name}</strong><br>
-                        <span style="font-size: 1.3rem; color: var(--accent-primary); font-weight: 800;">${country.count.toLocaleString()}</span> locations<br>
-                        <span style="font-size: 0.9rem; color: var(--text-secondary);">${percentage}% of map</span>
+                    <div style="text-align: center; line-height: 1.6;">
+                        <strong style="font-size: 1.05rem;">${country.name}</strong><br>
+                        <span style="font-size: 1.3rem; color: var(--accent-primary); font-weight: 700;">${country.count.toLocaleString()}</span> locations<br>
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);">${percentage}% of map</span>
                     </div>
                 `, { closeButton: false });
 
