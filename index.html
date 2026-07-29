@@ -21,7 +21,7 @@
                 <li><a href="#distribution">Distribution</a></li>
                 <li><a href="info.html">Map Info</a></li>
                 <li><a href="contact.html">Contact</a></li>
-                <li style="display:none;" id="admin-nav-item"><a href="admin.html" style="position:relative;">Admin Panel <span id="report-badge" class="report-badge" style="display:none;">0</span></a></li>
+                <li style="display:none;" id="admin-nav-item"><a href="admin.html">Admin Panel</a></li>
                 <li style="display:none;" id="logout-nav-item"><button id="logout-btn" class="logout-btn">Logout</button></li>
                 <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme"></button></li>
             </ul>
@@ -81,12 +81,10 @@
     <script type="module">
         import { auth, db } from "./js/firebase-config.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         const adminNav = document.getElementById('admin-nav-item');
         const logoutNav = document.getElementById('logout-nav-item');
         const logoutBtn = document.getElementById('logout-btn');
-        const badge = document.getElementById('report-badge');
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -95,22 +93,10 @@
             } else {
                 adminNav.style.display = 'none';
                 logoutNav.style.display = 'none';
-                badge.style.display = 'none';
             }
         });
 
         logoutBtn?.addEventListener('click', () => signOut(auth));
-
-        const q = query(collection(db, "reports"), where("status", "==", "unresolved"));
-        onSnapshot(q, (snapshot) => {
-            const count = snapshot.size;
-            if (count > 0) {
-                badge.innerText = count;
-                badge.style.display = '';
-            } else {
-                badge.style.display = 'none';
-            }
-        });
 
         // Custom dropdown for sort select
         (function() {

@@ -6,12 +6,8 @@
     <title>Admin Panel | A Champion World</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="assets/hannog.ico">
-    <style>
-        .tab-link { position: relative; }
-        .action-btn { margin-top: 1rem; }
-    </style>
 </head>
-<body data-page="admin-panel">
+<body data-page="admin">
     <div id="global-loader" style="display:none;"><div class="spinner"></div></div>
     
     <nav>
@@ -21,7 +17,7 @@
                 <li><a href="index.html">Home</a></li>
                 <li><a href="info.html">Map Info</a></li>
                 <li><a href="contact.html">Contact</a></li>
-                <li><a href="admin.html" style="position:relative;">Admin Panel <span id="notif-badge" class="report-badge">0</span></a></li>
+                <li><a href="admin.html">Admin Panel</a></li>
                 <li><button id="logout-btn" class="logout-btn">Logout</button></li>
                 <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme"></button></li>
             </ul>
@@ -30,36 +26,8 @@
 
     <main class="container" style="padding-top: 120px; padding-bottom: 6rem;">
         <h1 class="page-title-underline">Admin Panel</h1>
-        
-        <div class="tab-nav">
-            <button class="tab-link active" data-tab="reports">Reports <span id="tab-notif-badge" class="report-badge">0</span></button>
-            <button class="tab-link" data-tab="settings">Settings</button>
-            <button class="tab-link" data-tab="countries">Countries</button>
-        </div>
 
-        <!-- Reports Tab -->
-        <div id="tab-reports" class="tab-pane">
-            <h3 style="margin-bottom: 1.5rem;">Reported Broken Locations</h3>
-            <div id="reports-list">
-                <p>Loading reports...</p>
-            </div>
-        </div>
-
-        <!-- Settings Tab -->
-        <div id="tab-settings" class="tab-pane" style="display: none;">
-            <h3 style="margin-bottom: 1rem;">Manage Report Reasons</h3>
-            <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">These are the options that appear in the "Reason for Reporting" dropdown menu on the Report page.</p>
-            <div id="reasons-list" style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2rem; padding: 1rem; border: 1px dashed var(--border-bright);"></div>
-            
-            <h4 style="margin-bottom: 1rem;">Add New Option</h4>
-            <form id="add-reason-form" style="display: flex; gap: 1rem;">
-                <input type="text" id="new-reason" placeholder="e.g. Broken Camera, Wrong Country..." style="flex-grow: 1; padding: 0.85rem; border: 1px solid var(--border-dim); background: var(--bg-primary); color: var(--text-primary); font-family: inherit; border-radius: var(--radius-sm);">
-                <button type="submit" class="btn btn-primary">Add to Dropdown</button>
-            </form>
-        </div>
-
-        <!-- Countries Tab -->
-        <div id="tab-countries" class="tab-pane" style="display: none;">
+        <div class="tab-pane">
             <h3 style="margin-bottom: 1rem;">Add New Country</h3>
             <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Enter a country name and its location count. The flag will be detected automatically.</p>
             
@@ -85,11 +53,8 @@
 
     <script type="module">
         import { auth, db } from "./js/firebase-config.js";
-        import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-        import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-
-        const notifBadge = document.getElementById('notif-badge');
-        const tabNotifBadge = document.getElementById('tab-notif-badge');
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { onSnapshot, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         onAuthStateChanged(auth, (user) => {
             if (!user) {
@@ -102,96 +67,7 @@
 
         document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-        document.querySelectorAll('.tab-link').forEach(link => {
-            link.addEventListener('click', () => {
-                document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
-                document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
-                link.classList.add('active');
-                document.getElementById('tab-' + link.dataset.tab).style.display = 'block';
-            });
-        });
-
         function initPanel() {
-            // Monitor Reports
-            const q = query(collection(db, "reports"), where("status", "==", "unresolved"));
-            onSnapshot(q, (snapshot) => {
-                const count = snapshot.size;
-                notifBadge.innerText = count;
-                notifBadge.style.display = count > 0 ? 'block' : 'none';
-                tabNotifBadge.innerText = count;
-                tabNotifBadge.style.display = count > 0 ? 'block' : 'none';
-                
-                const list = document.getElementById('reports-list');
-                list.innerHTML = count === 0 ? '<p>No unresolved reports! Good job.</p>' : '';
-                
-                snapshot.forEach(reportDoc => {
-                    const data = reportDoc.data();
-                    const card = document.createElement('div');
-                    card.className = 'report-card';
-                    card.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div>
-                                <span class="reason-chip">${data.reason}</span>
-                                <p style="margin-top: 1rem;"><a href="${data.link}" target="_blank" style="color: var(--accent-primary); font-weight: 700;">View Location ↗</a></p>
-                                <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">${data.details || 'No additional details.'}</p>
-                            </div>
-                            <button class="btn btn-primary action-btn resolve-btn" data-id="${reportDoc.id}">Resolve & Delete</button>
-                        </div>
-                    `;
-                    list.appendChild(card);
-                });
-
-                document.querySelectorAll('.resolve-btn').forEach(btn => {
-                    btn.addEventListener('click', async () => {
-                        if(confirm('Mark this report as resolved and delete it?')) {
-                            await deleteDoc(doc(db, "reports", btn.dataset.id));
-                        }
-                    });
-                });
-            });
-
-            // Monitor Reasons
-            onSnapshot(doc(db, "config", "reportConfig"), (docSnap) => {
-                const reasonsList = document.getElementById('reasons-list');
-                reasonsList.innerHTML = '';
-                if (docSnap.exists()) {
-                    const reasons = docSnap.data().reasons || [];
-                    reasons.forEach(r => {
-                        const chip = document.createElement('div');
-                        chip.className = 'reason-chip';
-                        chip.style.display = 'flex';
-                        chip.style.alignItems = 'center';
-                        chip.style.gap = '10px';
-                        chip.innerHTML = `${r} <span class="del-reason" data-val="${r}" style="cursor:pointer; color:#ef4444; font-weight:800;">×</span>`;
-                        reasonsList.appendChild(chip);
-                    });
-
-                    document.querySelectorAll('.del-reason').forEach(btn => {
-                        btn.addEventListener('click', async () => {
-                            const newReasons = reasons.filter(x => x !== btn.dataset.val);
-                            await updateDoc(doc(db, "config", "reportConfig"), { reasons: newReasons });
-                        });
-                    });
-                }
-            });
-
-            document.getElementById('add-reason-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const val = document.getElementById('new-reason').value.trim();
-                if (!val) return;
-                
-                const docRef = doc(db, "config", "reportConfig");
-                const docSnap = await getDoc(docRef);
-                let reasons = [];
-                if (docSnap.exists()) reasons = docSnap.data().reasons || [];
-                
-                if (!reasons.includes(val)) {
-                    reasons.push(val);
-                    await setDoc(docRef, { reasons }, { merge: true });
-                }
-                document.getElementById('new-reason').value = '';
-            });
-
             // ─── Country Management ───────────────────────────────
 
             let pendingCountryCode = null;
