@@ -17,7 +17,6 @@
                 <li><a href="index.html#distribution">Distribution</a></li>
                 <li><a href="info.html">Map Info</a></li>
                 <li><a href="contact.html" class="active">Contact</a></li>
-                <li style="display:none;" id="admin-nav-item"><a href="admin.html">Admin Panel</a></li>
                 <li style="display:none;" id="logout-nav-item"><button id="logout-btn" class="logout-btn">Logout</button></li>
                 <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme"></button></li>
             </ul>
@@ -40,21 +39,14 @@
         </div>
     </main>
     <script type="module">
-        import { auth, db } from "./js/firebase-config.js";
+        import { auth } from "./js/firebase-config.js";
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
-        const adminNav = document.getElementById('admin-nav-item');
         const logoutNav = document.getElementById('logout-nav-item');
         const logoutBtn = document.getElementById('logout-btn');
 
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                adminNav.style.display = '';
-                logoutNav.style.display = '';
-            } else {
-                adminNav.style.display = 'none';
-                logoutNav.style.display = 'none';
-            }
+            logoutNav.style.display = user ? '' : 'none';
         });
 
         logoutBtn?.addEventListener('click', () => signOut(auth));

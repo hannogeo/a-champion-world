@@ -153,21 +153,6 @@ async function savePageContent() {
     try {
         await setDoc(doc(db, "pages", pageName), data, { merge: true });
 
-        // Save Country Overrides if any exist
-        const countryElements = document.querySelectorAll("[data-country-code]");
-        if (countryElements.length > 0) {
-            const overrides = {};
-            countryElements.forEach(el => {
-                const num = parseInt(el.innerText.replace(/,/g, ''), 10);
-                if (!isNaN(num)) {
-                    overrides[el.getAttribute("data-country-code")] = num;
-                }
-            });
-            if (Object.keys(overrides).length > 0) {
-                await setDoc(doc(db, "data", "countryOverrides"), overrides, { merge: true });
-            }
-        }
-
         saveBtn.innerText = 'Saved!';
         setTimeout(() => saveBtn.innerText = 'Save Page Changes', 2000);
     } catch (error) {
