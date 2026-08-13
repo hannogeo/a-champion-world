@@ -40,19 +40,11 @@ function updateTotalLocations() {
 }
 
 // Load Distribution from GitHub
-const DIST_REPO = 'hannogeo/achw-distribution';
+const DISTRIBUTION_URL = 'https://raw.githubusercontent.com/hannogeo/achw-distribution/main/distribution.txt';
 const STORAGE_KEY = 'achwDistributionCache';
 
 async function fetchDistributionText() {
-    const res = await fetch(`https://api.github.com/repos/${DIST_REPO}/contents/`);
-    if (!res.ok) throw new Error('Failed to list distribution repo');
-    const files = await res.json();
-    const candidates = files
-        .filter(f => f.type === 'file' && /^\d+-distribution\.txt$/.test(f.name))
-        .map(f => ({ num: parseInt(f.name, 10), url: f.download_url }))
-        .sort((a, b) => b.num - a.num);
-    if (candidates.length === 0) throw new Error('No distribution file found');
-    const rawRes = await fetch(candidates[0].url);
+    const rawRes = await fetch(DISTRIBUTION_URL);
     if (!rawRes.ok) throw new Error('Failed to fetch distribution file');
     return await rawRes.text();
 }
