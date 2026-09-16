@@ -12,6 +12,30 @@ async function loadCountryNames() {
 let countries = [];
 let totalLocations = 0;
 
+let subdivisionNames = {};
+let subdivisionData = {};
+let subdivisionNamesPromise = null;
+let subdivisionsPromise = null;
+
+const SUBDIVISION_URL = 'https://raw.githubusercontent.com/hannogeo/achw-distribution/main/subdivision-distribution.txt';
+const SUBDIVISION_NAMES_URL = 'subdivisions.csv';
+const SUBDIVISION_CACHE_KEY = 'achwSubdivisionDistCache';
+
+const ORPHAN_TO_COUNTRY = {
+    'Christmas Island': 'cx',
+    'Cocos (Keeling) Islands': 'cc',
+    'Eysturoy region': 'fo',
+    'Norðoyar region': 'fo',
+    'Sandoy region': 'fo',
+    'Streymoy region': 'fo',
+    'Suðuroy region': 'fo',
+    'Vágar region': 'fo',
+    'Hiiumaa vald': 'ee',
+    'Area A': 'il',
+    'Area B': 'il',
+    'Judea and Samaria': 'il'
+};
+
 function buildCountries(text) {
     return text.split('\n').map(line => {
         const parts = line.trim().split(/\s+/);
@@ -67,6 +91,168 @@ async function loadDistribution() {
     sortData(countries, sortSelect ? sortSelect.value : 'amount-desc');
     updateTotalLocations();
     if (countryGrid) renderCountries();
+
+    loadSubdivisions();
+}
+
+function parseCSVLine(line) {
+    const out = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQ) {
+            if (ch === '"') {
+                if (line[i + 1] === '"') { cur += '"'; i++; }
+                else inQ = false;
+            } else cur += ch;
+        } else {
+            if (ch === '"') inQ = true;
+            else if (ch === ',') { out.push(cur); cur = ''; }
+            else cur += ch;
+        }
+    }
+    out.push(cur);
+    return out;
+}
+
+function loadSubdivisionNames() {
+    if (!subdivisionNamesPromise) {
+        subdivisionNamesPromise = (async () => {
+            try {
+                const res = await fetch(SUBDIVISION_NAMES_URL);
+                if (!res.ok) throw new Error('Failed to fetch subdivision names');
+                const text = await res.text();
+                const names = {};
+                text.split('\n').forEach(line => {
+                    const f = parseCSVLine(line);
+                    if (f.length < 4 || !f[1] || f[1] === 'code') return;
+                    names[f[1]] = f[3] || f[2];
+                });
+                subdivisionNames = names;
+            } catch (e) {
+                console.error('Failed to load subdivision names:', e);
+            }
+        })();
+    }
+    return subdivisionNamesPromise;
+}
+
+function buildSubdivisionData(text) {
+    subdivisionData = {};
+    text.split('\n').forEach(line => {
+        const parts = line.trim().split('\t');
+        if (parts.length < 2) return;
+        const rawCode = parts[0].trim();
+        const count = parseInt(parts[1].trim(), 10);
+        if (isNaN(count)) return;
+
+        let cc;
+        const dashIdx = rawCode.indexOf('-');
+        if (dashIdx !== -1) {
+            cc = rawCode.substring(0, dashIdx).toLowerCase();
+        } else {
+            cc = ORPHAN_TO_COUNTRY[rawCode];
+            if (!cc) return;
+        }
+
+        if (!subdivisionData[cc]) subdivisionData[cc] = [];
+        subdivisionData[cc].push({ name: subdivisionNames[rawCode] || rawCode, count });
+    });
+}
+
+function loadSubdivisions() {
+    if (!subdivisionsPromise) {
+        subdivisionsPromise = (async () => {
+            await loadSubdivisionNames();
+            let text = null;
+            try {
+                const res = await fetch(SUBDIVISION_URL);
+                if (!res.ok) throw new Error();
+                text = await res.text();
+                try { localStorage.setItem(SUBDIVISION_CACHE_KEY, text); } catch (e) {}
+            } catch (e) {
+                console.error('Subdivision distribution unavailable, using cached copy:', e);
+                try { text = localStorage.getItem(SUBDIVISION_CACHE_KEY); } catch (e) {}
+            }
+            buildSubdivisionData(text || '');
+        })();
+    }
+    return subdivisionsPromise;
+}
+
+function escapeHTML(str) {
+    return String(str).replace(/[&<>"']/g, ch => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+    ));
+}
+
+async function showSubdivisions(countryCode, countryName) {
+    await loadSubdivisions();
+    const subs = (subdivisionData[countryCode.toLowerCase()] || []).slice();
+    if (subs.length === 0) return;
+    subs.sort((a, b) => b.count - a.count);
+
+    let overlay = document.getElementById('subdivision-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'subdivision-overlay';
+        overlay.className = 'subdivision-overlay';
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) hideSubdivisions();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hideSubdivisions();
+        });
+        document.body.appendChild(overlay);
+    }
+
+    const total = subs.reduce((a, s) => a + s.count, 0);
+    const maxCount = subs[0].count;
+
+    overlay.innerHTML = `
+        <div class="subdivision-panel">
+            <div class="subdivision-header">
+                <img src="https://flagcdn.com/w80/${countryCode.toLowerCase()}.png" alt="${escapeHTML(countryName)}" class="flag">
+                <div class="subdivision-heading">
+                    <h2>${escapeHTML(countryName)}</h2>
+                    <p>${total.toLocaleString()} locations across ${subs.length} subdivision${subs.length === 1 ? '' : 's'}</p>
+                </div>
+                <button class="subdivision-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="subdivision-grid">
+                ${subs.map((s, i) => `
+                    <div class="subdivision-card">
+                        <div class="subdivision-name">${escapeHTML(s.name)}</div>
+                        <div class="subdivision-stats">
+                            <span class="subdivision-count">${s.count.toLocaleString()}</span>
+                            <span class="subdivision-pct">${((s.count / total) * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" data-pct="${Math.max((s.count / maxCount) * 100, 1)}"></div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    overlay.querySelector('.subdivision-close').addEventListener('click', hideSubdivisions);
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    requestAnimationFrame(() => {
+        overlay.querySelectorAll('.progress-bar').forEach((bar, i) => {
+            setTimeout(() => { bar.style.width = bar.dataset.pct + '%'; }, 50 + i * 15);
+        });
+    });
+}
+
+function hideSubdivisions() {
+    const overlay = document.getElementById('subdivision-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+    }
 }
 
 function renderCountries(filter = '') {
@@ -100,6 +286,7 @@ function renderCountries(filter = '') {
         `;
 
         countryGrid.appendChild(card);
+        card.addEventListener('click', () => showSubdivisions(country.code, country.name));
 
         setTimeout(() => {
             const maxCount = countries[0].count;
